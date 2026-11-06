@@ -1,0 +1,12 @@
+@font-face{font-family:Figtree;font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/font-1.ttf') format('truetype')}
+@font-face{font-family:Figtree;font-style:normal;font-weight:500;font-display:swap;src:url('/fonts/font-2.ttf') format('truetype')}
+@font-face{font-family:Figtree;font-style:normal;font-weight:600;font-display:swap;src:url('/fonts/font-3.ttf') format('truetype')}
+@font-face{font-family:Figtree;font-style:normal;font-weight:700;font-display:swap;src:url('/fonts/font-4.ttf') format('truetype')}
+@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:600;font-display:swap;src:url('/fonts/font-5.ttf') format('truetype')}
+@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:700;font-display:swap;src:url('/fonts/font-6.ttf') format('truetype')}
+@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:800;font-display:swap;src:url('/fonts/font-7.ttf') format('truetype')}
+
+:root{--deep:#003B46;--ocean:#07575B;--wave:#66A5AD;--seafoam:#C4DFE6;--paper:#fffdf5;--ink:#0f3036;--muted:#284b51;--line:#cfddde;--surface:#f5f8f6;--white:#fff;--success:#20745b;--warning:#916215;--danger:#a43d43;--radius:14px;font-family:Figtree,Arial,sans-serif;color:var(--ink);background:var(--surface);font-synthesis:none;text-rendering:optimizeLegibility}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-width:320px;min-height:100vh;background:var(--surface);color:var(--ink);font-size:16px;line-height:1.55}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.55}a{color:inherit}::selection{background:var(--seafoam);color:var(--deep)}:focus-visible{outline:3px solid var(--ocean);outline-offset:2px}h1,h2,h3,p{margin:0}h1,h2,h3{font-family:'Plus Jakarta Sans',Figtree,sans-serif;color:var(--deep)}input,select,textarea{width:100%;border:1px solid #bdcdcf;border-radius:9px;background:#fff;color:var(--ink);padding:10px 12px;min-height:43px;transition:border-color .15s,box-shadow .15s}input:focus,select:focus,textarea:focus{border-color:var(--ocean);box-shadow:0 0 0 3px rgba(102,165,173,.2);outline:0}textarea{resize:vertical}small{display:block;color:var(--muted);font-size:.79rem;line-height:1.45}code{font-family:ui-monospace,SFMono-Regular,monospace;font-size:.82rem;background:#edf3f2;padding:3px 6px;border-radius:5px;color:var(--ocean)}
+
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.spin{animation:none}}
