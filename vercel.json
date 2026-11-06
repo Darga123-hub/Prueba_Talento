@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run db:migrate && npm run db:seed:catalogs && npm run db:seed:demo && npm run build",,
+  "buildCommand": "npm run db:migrate && npm run db:seed:catalogs && npm run db:seed:demo && npm run build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
