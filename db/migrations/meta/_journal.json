@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793890816423,
+      "tag": "0000_quick_thunderbolt_ross",
+      "breakpoints": true
+    }
+  ]
+}
