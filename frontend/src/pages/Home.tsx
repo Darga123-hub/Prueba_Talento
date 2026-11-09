@@ -23,7 +23,8 @@ export default function Home() {
   const [view, setView] = useState("dashboard"); const [menu, setMenu] = useState(false); const [globalSearch, setGlobalSearch] = useState("");
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const session = trpc.hr.session.useQuery(undefined, { enabled: isAuthenticated });
-  const catalogs = trpc.hr.catalogs.list.useQuery(undefined, { enabled: isAuthenticated });
+  const catalogs = trpc.hr.catalogs.list.useQuery(undefined, { enabled: isAuthenticated && Boolean(session.data) && session.data?.role !== "trabajador" });
+  useEffect(() => { if (session.data?.role === "trabajador") setView("personal"); }, [session.data?.role]);
   useEffect(() => {
     if (menu) { document.querySelector<HTMLElement>(".sidebar nav button")?.focus(); }
     else if (menuButtonRef.current && document.activeElement?.closest(".sidebar")) { menuButtonRef.current.focus(); }
@@ -36,7 +37,7 @@ export default function Home() {
     {menu && <button className="sidebar-overlay" aria-label="Cerrar menú" onClick={() => setMenu(false)} />}
     <aside className={`sidebar ${menu ? "open" : ""}`} onKeyDown={(e) => { if (e.key === "Escape") { setMenu(false); menuButtonRef.current?.focus(); } }}>
       <div className="brand"><span className="brand-mark">TH</span><div><strong>Talento Humano</strong><small>Gestión administrativa</small></div><button className="sidebar-close" onClick={() => setMenu(false)} aria-label="Cerrar menú"><X size={20} /></button></div>
-      <nav className="main-nav" aria-label="Navegación principal">{navigation.map((group) => <div className="nav-group" key={group.section}><span className="nav-label">{group.section}</span>{group.items.map(([id, text, Icon]) => <button key={id} className={view === id ? "active" : ""} aria-current={view === id ? "page" : undefined} onClick={() => go(id)}><Icon size={19} strokeWidth={1.8} /><span>{text}</span>{view === id && <ChevronRight size={15} className="nav-chevron" />}</button>)}</div>)}</nav>
+      <nav className="main-nav" aria-label="Navegación principal">{navigation.map((group) => <div className="nav-group" key={group.section}><span className="nav-label">{group.section}</span>{group.items.filter(([id]) => role === "trabajador" ? ["personal", "nomina"].includes(id) : id !== "usuarios" || session.data?.isGlobalAdmin).map(([id, text, Icon]) => <button key={id} className={view === id ? "active" : ""} aria-current={view === id ? "page" : undefined} onClick={() => go(id)}><Icon size={19} strokeWidth={1.8} /><span>{text}</span>{view === id && <ChevronRight size={15} className="nav-chevron" />}</button>)}</div>)}</nav>
       <div className="sidebar-foot"><div className="system-status"><CircleCheck size={16} /><div><strong>Sistema operativo</strong><small>Datos centralizados</small></div></div><span className="version">Módulo RRHH · v1.0</span></div>
     </aside>
     <div className="workspace">
@@ -53,7 +54,7 @@ export default function Home() {
         {view === "legal" && <LegalView role={role} />}
         {view === "reportes" && <ReportsView />}
         {view === "auditoria" && <AuditView />}
-        {view === "usuarios" && (role === "administrador" ? <UsersView /> : <Empty title="Acceso restringido" text="Solo el administrador general puede gestionar usuarios y perfiles." />)}
+        {view === "usuarios" && (session.data?.isGlobalAdmin ? <UsersView /> : <Empty title="Acceso restringido" text="Solo el administrador global puede gestionar usuarios y perfiles." />)}
       </main>
       <footer className="app-footer"><span><Database size={14} />Información persistente y protegida por perfiles</span><span>Las validaciones legales requieren respaldo documental</span></footer>
     </div><Toaster position="top-right" richColors closeButton />

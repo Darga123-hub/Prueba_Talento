@@ -13,26 +13,13 @@ const demoAccounts = [
   { username: "consulta.demo", label: "Consulta", detail: "Solo lectura" },
 ];
 const DEMO_PASSWORD = "DemoRRHH2026!";
-
-function getOAuthUrl() {
-  const kimiAuthUrl = import.meta.env.VITE_KIMI_AUTH_URL;
-  const appID = import.meta.env.VITE_APP_ID;
-  const redirectUri = `${window.location.origin}/api/oauth/callback`;
-  const state = btoa(redirectUri);
-  const url = new URL(`${kimiAuthUrl}/api/oauth/authorize`);
-  url.searchParams.set("client_id", appID);
-  url.searchParams.set("redirect_uri", redirectUri);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", "profile");
-  url.searchParams.set("state", state);
-  return url.toString();
-}
+const demoEnabled = import.meta.env.VITE_DEMO_MODE === "true";
 
 export default function Login() {
   const navigate = useNavigate();
   const utils = trpc.useUtils();
-  const [username, setUsername] = useState("admin.demo");
-  const [password, setPassword] = useState(DEMO_PASSWORD);
+  const [username, setUsername] = useState(demoEnabled ? "admin.demo" : "");
+  const [password, setPassword] = useState(demoEnabled ? DEMO_PASSWORD : "");
   const [showPassword, setShowPassword] = useState(false);
   const login = trpc.auth.login.useMutation({
     onSuccess: async () => {
@@ -60,7 +47,7 @@ export default function Login() {
             <span><FileCheck2 size={16} /> Auditoría de operaciones</span>
           </div>
         </div>
-        <p className="rrhh-login__note">Un entorno de demostración sin información personal real.</p>
+        <p className="rrhh-login__note">{demoEnabled ? "Entorno de demostración: no uses información personal real." : "Acceso privado a la gestión de Talento Humano."}</p>
       </section>
 
       <section className="rrhh-login__access">
@@ -69,7 +56,7 @@ export default function Login() {
             <span className="rrhh-login__lock"><LockKeyhole size={23} /></span>
             <div><small>Módulo de RRHH</small><h2>Bienvenido</h2></div>
           </div>
-          <p className="rrhh-login__intro">Ingresa con una cuenta demo o selecciona el perfil que deseas probar.</p>
+          <p className="rrhh-login__intro">{demoEnabled ? "Ingresa con una cuenta demo o selecciona el perfil que deseas probar." : "Ingresa con tu usuario y contraseña."}</p>
           <form onSubmit={submit} className="rrhh-login__form">
             <label className="rrhh-login__field">Usuario
               <div className="rrhh-login__input"><UserRound size={18} /><input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required /></div>
@@ -81,13 +68,10 @@ export default function Login() {
             <button className="rrhh-login__submit" type="submit" disabled={login.isPending}>{login.isPending ? "Verificando acceso…" : <>Entrar al módulo <ArrowRight size={18} /></>}</button>
           </form>
 
-          <div className="rrhh-login__divider"><span>Perfiles de demostración</span></div>
-          <div className="rrhh-login__demo">
-            {demoAccounts.map((account) => <button key={account.username} type="button" aria-pressed={username === account.username} className={username === account.username ? "selected" : ""} onClick={() => { setUsername(account.username); setPassword(DEMO_PASSWORD); login.reset(); }}><strong>{account.label}</strong><small>{account.username}</small><span>{account.detail}</span></button>)}
-          </div>
-          <p className="rrhh-login__password">Contraseña para todos: <code>{DEMO_PASSWORD}</code></p>
-          <p className="rrhh-login__warning">Solo para pruebas. Sustituye o desactiva estas cuentas antes de usar el sistema en producción.</p>
-          {import.meta.env.VITE_KIMI_AUTH_URL && <button className="rrhh-login__kimi" type="button" onClick={() => { window.location.href = getOAuthUrl(); }}>Continuar con una cuenta Kimi</button>}
+          {demoEnabled && <><div className="rrhh-login__divider"><span>Perfiles de demostración</span></div>
+            <div className="rrhh-login__demo">{demoAccounts.map((account) => <button key={account.username} type="button" aria-pressed={username === account.username} className={username === account.username ? "selected" : ""} onClick={() => { setUsername(account.username); setPassword(DEMO_PASSWORD); login.reset(); }}><strong>{account.label}</strong><small>{account.username}</small><span>{account.detail}</span></button>)}</div>
+            <p className="rrhh-login__password">Contraseña para todos: <code>{DEMO_PASSWORD}</code></p>
+            <p className="rrhh-login__warning">Solo para pruebas. Desactiva estas cuentas y el modo demo antes de producción.</p></>}
         </div>
         <p className="rrhh-login__footer">Gestión de Talento Humano · Acceso seguro y trazable</p>
       </section>

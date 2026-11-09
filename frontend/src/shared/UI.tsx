@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { X, Search, Inbox, LoaderCircle } from "lucide-react";
+import { buildCsv } from "./csv";
 
 const modalStack: symbol[] = [];
 const FOCUSABLE = 'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
@@ -75,8 +76,7 @@ export function PanelHead({ title, subtitle, action }: { title: string; subtitle
 export function TableWrap({ children, label = "Tabla de datos" }: { children: ReactNode; label?: string }) { return <div className="table-wrap" role="region" aria-label={label} tabIndex={0}><table>{children}</table></div>; }
 export function Submit({ busy, children }: { busy?: boolean; children: ReactNode }) { return <button className="button primary" type="submit" disabled={busy}>{busy && <LoaderCircle size={17} className="spin" />}{children}</button>; }
 export function downloadCsv(filename: string, headers: string[], rows: (string | number | null | undefined)[][]) {
-  const esc = (v: string | number | null | undefined) => `"${String(v ?? "").replaceAll('"', '""')}"`;
-  const csv = "\uFEFF" + [headers, ...rows].map((r) => r.map(esc).join(",")).join("\n");
+  const csv = buildCsv(headers, rows);
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); const a = document.createElement("a"); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
 }
 export async function fileToBase64(file: File) {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Download, ShieldCheck, Power, Scale, FileSpreadsheet, UsersRound } from "lucide-react";
+import { Plus, Download, ShieldCheck, Power, Scale, FileSpreadsheet, UsersRound, KeyRound, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/shared/providers/trpc";
 import { Badge, Empty, Field, Loading, Modal, PageTitle, Panel, PanelHead, Submit, TableWrap, date, downloadCsv, label, money, today } from "@/shared/UI";
@@ -42,6 +42,60 @@ export function AuditView() {
 
 const roleNames: Record<string, string> = { administrador: "Administrador general", talento: "Talento Humano", nomina: "Nómina", aprobador: "Aprobador", tesoreria: "Tesorería", consulta: "Consulta / Auditoría", trabajador: "Trabajador" };
 export function UsersView() {
-  const list = trpc.hr.users.list.useQuery(); const utils = trpc.useUtils(); const mutation = trpc.hr.users.setRole.useMutation({ onSuccess: () => { utils.hr.users.list.invalidate(); toast.success("Perfil actualizado"); }, onError: (e) => toast.error(e.message) });
-  return <><PageTitle eyebrow="Seguridad y segregación" title="Usuarios y perfiles" description="Asigna el nivel de acceso a las personas que han iniciado sesión en el módulo." /><div className="notice"><ShieldCheck size={20} /><span>El creador de la aplicación posee el perfil administrador. Los demás usuarios comienzan con acceso de consulta hasta que se les asigne otro perfil.</span></div><Panel><PanelHead title="Cuentas registradas" subtitle="El acceso se realiza mediante autenticación; aquí no se manejan contraseñas." />{list.isLoading ? <Loading /> : !list.data?.length ? <Empty title="Sin usuarios" text="Las cuentas aparecerán después del primer inicio de sesión." /> : <TableWrap><thead><tr><th>Usuario</th><th>Correo</th><th>Último acceso</th><th>Perfil RRHH</th><th>Estado</th><th></th></tr></thead><tbody>{list.data.map((u) => <tr key={u.id}><td><div className="person-cell"><span className="avatar"><UsersRound size={17} /></span><strong>{u.name || "Usuario"}</strong></div></td><td>{u.email || "—"}</td><td>{date(u.lastSignInAt)}</td><td><select defaultValue={u.role === "admin" ? "administrador" : u.profile?.rrhhRole ?? "consulta"} id={`role-${u.id}`} disabled={u.role === "admin"}>{Object.entries(roleNames).map(([v, n]) => <option key={v} value={v}>{n}</option>)}</select></td><td><Badge value={u.profile?.active === false ? "inactivo" : "activo"} /></td><td>{u.role !== "admin" && <button className="button tiny" onClick={() => { const select = document.getElementById(`role-${u.id}`) as HTMLSelectElement; mutation.mutate({ userId: u.id, rrhhRole: select.value as any, active: true }); }}>Guardar perfil</button>}</td></tr>)}</tbody></TableWrap>}</Panel></>;
+  const list = trpc.hr.users.list.useQuery();
+  const people = trpc.hr.employees.list.useQuery({ status: "todos", limit: 200 });
+  const [createOpen, setCreateOpen] = useState(false);
+  const [passwordUser, setPasswordUser] = useState<any | "self" | null>(null);
+  const utils = trpc.useUtils();
+  const refresh = async () => { await utils.hr.users.list.invalidate(); };
+  return <><PageTitle eyebrow="Seguridad y segregación" title="Usuarios y perfiles" description="Crea cuentas reales, asigna perfiles y controla su estado y acceso." action={<div className="button-group"><button className="button secondary" onClick={() => setPasswordUser("self")}><KeyRound size={17} />Cambiar mi contraseña</button><button className="button primary" onClick={() => setCreateOpen(true)}><UserPlus size={17} />Crear usuario</button></div>} />
+    <div className="notice"><ShieldCheck size={20} /><span>Solo un administrador global puede gestionar cuentas. Desactivar, cambiar el perfil o restablecer la contraseña revoca todas las sesiones del usuario.</span></div>
+    <Panel><PanelHead title="Cuentas registradas" subtitle="Las contraseñas nunca se muestran ni se incluyen en las respuestas." />{list.isLoading ? <Loading /> : !list.data?.length ? <Empty title="Sin usuarios" text="Crea el primer usuario para comenzar." /> : <TableWrap><thead><tr><th>Usuario</th><th>Correo</th><th>Último acceso</th><th>Perfil y expediente</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{list.data.map((u) => <UserRow key={u.id} user={u} people={people.data ?? []} onSaved={refresh} onPassword={() => setPasswordUser(u)} />)}</tbody></TableWrap>}</Panel>
+    {createOpen && <CreateUserForm people={people.data ?? []} onClose={() => setCreateOpen(false)} onDone={async () => { setCreateOpen(false); await refresh(); }} />}
+    {passwordUser && <PasswordForm user={passwordUser} onClose={() => setPasswordUser(null)} />}
+  </>;
+}
+
+function UserRow({ user, people, onSaved, onPassword }: { user: any; people: any[]; onSaved: () => Promise<void>; onPassword: () => void }) {
+  const [role, setRole] = useState(user.profile?.rrhhRole ?? "consulta");
+  const [employeeId, setEmployeeId] = useState(String(user.employeeId ?? ""));
+  const setRoleMutation = trpc.hr.users.setRole.useMutation();
+  const setActive = trpc.hr.users.setActive.useMutation();
+  const save = async () => {
+    try {
+      await setRoleMutation.mutateAsync({ userId: user.id, rrhhRole: role as any, employeeId: role === "trabajador" ? Number(employeeId) : null });
+      await onSaved(); toast.success("Perfil actualizado y sesiones revocadas");
+    } catch (error: any) { toast.error(error.message); }
+  };
+  const toggle = async () => {
+    try { await setActive.mutateAsync({ userId: user.id, active: !!user.disabledAt }); await onSaved(); toast.success("Estado actualizado"); } catch (error: any) { toast.error(error.message); }
+  };
+  return <tr><td><div className="person-cell"><span className="avatar"><UsersRound size={17} /></span><div><strong>{user.name || user.username}</strong><small>{user.username}{user.role === "admin" ? " · Administrador global" : ""}</small></div></div></td><td>{user.email || "—"}</td><td>{date(user.lastSignInAt)}</td><td><select aria-label={`Perfil de ${user.username}`} value={role} onChange={(e) => setRole(e.target.value)}>{Object.entries(roleNames).map(([v, n]) => <option key={v} value={v}>{n}</option>)}</select>{role === "trabajador" && <select aria-label={`Expediente de ${user.username}`} value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}><option value="">Vincular expediente…</option>{people.map((p) => <option key={p.id} value={p.id}>{p.firstName} {p.lastName} · {p.documentId}</option>)}</select>}</td><td><Badge value={user.disabledAt ? "inactivo" : "activo"} /></td><td><div className="row-actions"><button className="button tiny" disabled={setRoleMutation.isPending || (role === "trabajador" && !employeeId)} onClick={save}>Guardar</button><button className="icon-button" title="Restablecer contraseña" aria-label={`Restablecer contraseña de ${user.username}`} onClick={onPassword}><KeyRound size={16} /></button><button className="button tiny" disabled={setActive.isPending} onClick={toggle}>{user.disabledAt ? "Activar" : "Desactivar"}</button></div></td></tr>;
+}
+
+function CreateUserForm({ people, onClose, onDone }: { people: any[]; onClose: () => void; onDone: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false); const [role, setRole] = useState("consulta"); const mutation = trpc.hr.users.create.useMutation();
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); const f = new FormData(e.currentTarget); setBusy(true);
+    try {
+      await mutation.mutateAsync({ username: String(f.get("username")), name: String(f.get("name")), email: String(f.get("email")), password: String(f.get("password")), globalAdmin: f.get("globalAdmin") === "on", rrhhRole: role as any, employeeId: role === "trabajador" ? Number(f.get("employeeId")) : null });
+      toast.success("Usuario creado"); await onDone();
+    } catch (error: any) { toast.error(error.message); } finally { setBusy(false); }
+  };
+  return <Modal title="Crear usuario real" description="La contraseña debe tener al menos 12 caracteres, mayúsculas, minúsculas, números y símbolos." onClose={onClose} wide><form className="form-grid" onSubmit={submit}><Field label="Usuario"><input name="username" autoComplete="off" pattern="[a-z0-9._-]+" required /></Field><Field label="Nombre"><input name="name" required /></Field><Field label="Correo"><input name="email" type="email" /></Field><Field label="Contraseña inicial"><input name="password" type="password" autoComplete="new-password" minLength={12} required /></Field><Field label="Perfil RRHH"><select value={role} onChange={(e) => setRole(e.target.value)}>{Object.entries(roleNames).map(([v, n]) => <option key={v} value={v}>{n}</option>)}</select></Field>{role === "trabajador" && <Field label="Expediente vinculado"><select name="employeeId" required defaultValue=""><option value="" disabled>Selecciona un expediente</option>{people.map((p) => <option key={p.id} value={p.id}>{p.firstName} {p.lastName} · {p.documentId}</option>)}</select></Field>}<Field label="Privilegio global" full><span><input name="globalAdmin" type="checkbox" /> Administrador global (puede gestionar usuarios)</span></Field><div className="form-actions field-full"><button type="button" className="button ghost" onClick={onClose}>Cancelar</button><Submit busy={busy}>Crear usuario</Submit></div></form></Modal>;
+}
+
+function PasswordForm({ user, onClose }: { user: any; onClose: () => void }) {
+  const self = user === "self"; const [busy, setBusy] = useState(false);
+  const change = trpc.hr.users.changePassword.useMutation(); const reset = trpc.hr.users.resetPassword.useMutation();
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); const f = new FormData(e.currentTarget); setBusy(true);
+    try {
+      if (self) await change.mutateAsync({ currentPassword: String(f.get("currentPassword")), newPassword: String(f.get("newPassword")) });
+      else await reset.mutateAsync({ userId: user.id, newPassword: String(f.get("newPassword")) });
+      toast.success(self ? "Contraseña cambiada. Vuelve a iniciar sesión." : "Contraseña restablecida y sesiones revocadas"); onClose();
+      if (self) window.location.assign("/login");
+    } catch (error: any) { toast.error(error.message); } finally { setBusy(false); }
+  };
+  return <Modal title={self ? "Cambiar mi contraseña" : `Restablecer contraseña de ${user.username}`} description="La operación invalida todas las sesiones anteriores." onClose={onClose}><form className="form-grid single" onSubmit={submit}>{self && <Field label="Contraseña actual"><input name="currentPassword" type="password" autoComplete="current-password" required /></Field>}<Field label="Nueva contraseña" hint="Mínimo 12 caracteres con mayúsculas, minúsculas, números y símbolos."><input name="newPassword" type="password" autoComplete="new-password" minLength={12} required /></Field><div className="form-actions"><button type="button" className="button ghost" onClick={onClose}>Cancelar</button><Submit busy={busy}>Guardar contraseña</Submit></div></form></Modal>;
 }
