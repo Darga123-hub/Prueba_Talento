@@ -13,4 +13,6 @@ export const env = {
   },
   get blobToken() { return required("BLOB_READ_WRITE_TOKEN"); },
   isProduction: process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production",
+  isHttps: process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL_ENV),
+  demoMode: process.env.DEMO_MODE === "true",
 };

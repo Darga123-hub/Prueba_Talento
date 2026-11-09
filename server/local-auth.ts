@@ -1,5 +1,12 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
+import { z } from "zod";
+
+export const passwordPolicy = z.string().min(12, "La contraseña debe tener al menos 12 caracteres.").max(128)
+  .regex(/[a-z]/, "Debe incluir una letra minúscula.")
+  .regex(/[A-Z]/, "Debe incluir una letra mayúscula.")
+  .regex(/[0-9]/, "Debe incluir un número.")
+  .regex(/[^A-Za-z0-9]/, "Debe incluir un símbolo.");
 
 const scrypt = promisify(scryptCallback);
 const KEY_LENGTH = 64;

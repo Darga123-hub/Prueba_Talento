@@ -8,6 +8,13 @@
       "when": 1793890816423,
       "tag": "0000_quick_thunderbolt_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794245374972,
+      "tag": "0001_yellow_the_hunter",
+      "breakpoints": true
     }
   ]
 }

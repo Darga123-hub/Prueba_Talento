@@ -1,101 +1,55 @@
 # Módulo de Talento Humano — Vercel + Neon
 
-Módulo responsivo de RRHH con expedientes, movimientos, incidencias, procesos especiales, conceptos, nómina, recibos, pagos, parámetros legales, reportes, usuarios y auditoría. Esta variante es independiente de Kimi y está preparada para desplegarse en Vercel con PostgreSQL de Neon.
+Módulo responsivo de RRHH con expedientes, movimientos, incidencias, procesos especiales, conceptos, nómina, recibos, pagos, parámetros legales, reportes, usuarios y auditoría. Usa React 19, TypeScript, Vite, Hono, tRPC 11, Drizzle, PostgreSQL de Neon y Vercel Blob privado. Neon Auth permanece desactivado.
 
-## Tecnologías
-
-- React 19, TypeScript y Vite.
-- Hono y tRPC 11 como API serverless.
-- Drizzle ORM, `pg` y `@vercel/functions` para Neon/PostgreSQL.
-- Sesiones JWT en cookie `httpOnly`, contraseñas con `scrypt` y sal aleatoria.
-- Vercel Blob privado para los documentos de expedientes.
-- Zod para validación de entradas y Superjson para los tipos de tRPC.
-
-## Estructura
-
-```text
-frontend/
-  src/
-    modules/
-      auth/             Inicio de sesión
-      personal/         Expedientes y documentos
-      operaciones/      Movimientos, incidencias y procesos
-      nomina/           Conceptos, nómina y recibos
-      administracion/   Catálogos, legal, reportes, auditoría y usuarios
-    shared/             UI, estilos, hooks y proveedor tRPC
-    pages/              Shell de la aplicación
-api/
-  index.ts              Entrada de Vercel Functions
-server/
-  app.ts                Aplicación Hono
-  router.ts             Router principal tRPC
-  auth-router.ts        Login, sesión y logout
-  hr-router.ts          Reglas de RRHH
-  queries/connection.ts Pool Neon y Drizzle
-contracts/
-  api.ts                Contrato tipado del API
-db/
-  schema.ts             Esquema PostgreSQL
-  migrations/           Migraciones versionadas
-  seed.ts               Catálogos mínimos
-  seed-demo.ts          Usuarios demo opcionales
-docs/
-  ARQUITECTURA.md
-  DESPLIEGUE.md
-  PRUEBAS.md
-vercel.json
-.env.example
-```
-
-## Puesta en marcha local
+## Puesta en marcha
 
 Requisitos: Node.js 20 o superior, una base Neon y un almacén Vercel Blob privado.
 
-1. Instala las dependencias:
+```bash
+npm ci
+```
 
-   ```bash
-   npm install
-   ```
+Copia `.env.example` como `.env` y completa los valores sin compartir ese archivo. Aplica migraciones y catálogos únicamente sobre el entorno que corresponda:
 
-2. Copia `.env.example` como `.env` y completa los valores con tus propias credenciales. No compartas ese archivo.
+```bash
+npm run db:migrate
+npm run db:seed:catalogs
+npm run dev
+```
 
-3. Aplica el esquema y, opcionalmente, carga los catálogos:
+Abre `http://localhost:5173`. Vite sirve el frontend y monta la API Hono en `/api`.
 
-   ```bash
-   npm run db:migrate
-   npm run db:seed:catalogs
-   ```
+## Modo demo aislado
 
-4. Si deseas probar los perfiles, crea los usuarios demo:
+El modo demo está desactivado por defecto y exige `DEMO_MODE=true` en el servidor y `VITE_DEMO_MODE=true` al compilar el frontend. Usa solo una base vacía de pruebas, sin información real.
 
-   ```bash
-   npm run db:seed:demo
-   ```
+```bash
+npm run db:migrate
+npm run db:seed:catalogs
+CONFIRM_DEMO_SEED=YES_DEMO_ONLY npm run db:seed:demo
+```
 
-5. Inicia el entorno local:
+En PowerShell:
 
-   ```bash
-   npm run dev
-   ```
+```powershell
+$env:CONFIRM_DEMO_SEED="YES_DEMO_ONLY"
+npm run db:seed:demo
+Remove-Item Env:CONFIRM_DEMO_SEED
+```
 
-   Abre `http://localhost:5173`. Vite sirve el frontend y monta la API Hono en `/api`.
+Las seis cuentas ficticias (`admin.demo`, `talento.demo`, `nomina.demo`, `aprobador.demo`, `tesoreria.demo` y `consulta.demo`) comparten la contraseña pública `DemoRRHH2026!`. El backend las rechaza cuando `DEMO_MODE` no es `true`, aunque sigan existiendo en la base.
 
-## Usuarios de demostración
+## Crear el primer administrador real y salir del modo demo
 
-Todos son perfiles ficticios y comparten la contraseña pública de pruebas `DemoRRHH2026!`.
+1. Aplica `0001_yellow_the_hunter.sql` mediante `npm run db:migrate` en el entorno elegido.
+2. Ejecuta `npm run db:create-admin`. El comando pide usuario, nombre, correo y contraseña de forma interactiva; la contraseña no aparece en la terminal ni en la línea de comandos.
+3. Inicia sesión con la nueva cuenta, cierra la sesión demo y comprueba que puedes abrir **Administración → Usuarios**.
+4. Desde esa pantalla desactiva todas las cuentas `*.demo`. El sistema impide desactivar al último administrador global activo.
+5. Configura `DEMO_MODE=false` y `VITE_DEMO_MODE=false` (o elimina ambas) en Vercel.
+6. Redespliega Production. Comprueba que el login ya no muestra ni precarga demos y que `admin.demo` recibe el error genérico de autenticación.
 
-| Usuario | Perfil | Uso principal |
-|---|---|---|
-| `admin.demo` | Administrador | Acceso completo y asignación de perfiles |
-| `talento.demo` | Talento Humano | Expedientes, documentos y operaciones |
-| `nomina.demo` | Nómina | Conceptos, cálculo, revisión y cierre |
-| `aprobador.demo` | Aprobador | Aprobación independiente |
-| `tesoreria.demo` | Tesorería | Registro de pagos |
-| `consulta.demo` | Consulta | Lectura sin operaciones de escritura |
-
-Para comprobar la separación de funciones: calcula y envía una nómina a revisión con `nomina.demo`, intenta aprobarla con esa misma cuenta —el sistema debe rechazarlo— y luego aprueba con `aprobador.demo`. El cierre se realiza con Nómina y el pago con Tesorería.
-
-**Desactiva o sustituye estas cuentas antes de producción. No ejecutes `db:seed:demo` en una base con información real.**
+La guía detallada está en [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
 
 ## Comandos
 
@@ -104,21 +58,28 @@ Para comprobar la separación de funciones: calcula y envía una nómina a revis
 | `npm run dev` | Entorno local frontend + API |
 | `npm run check` | Comprobación estricta de TypeScript |
 | `npm run build` | Compila el frontend en `frontend/dist` |
-| `npm run db:generate` | Genera una migración después de cambiar `db/schema.ts` |
-| `npm run db:migrate` | Aplica migraciones pendientes con la conexión directa |
-| `npm run db:seed:catalogs` | Inserta catálogos iniciales sin datos personales |
-| `npm run db:seed:demo` | Crea o actualiza los seis perfiles demo |
+| `npm test` | Pruebas automatizadas sin base ni credenciales |
+| `npm run db:generate` | Genera una migración nueva tras cambiar el esquema |
+| `npm run db:migrate` | Aplica migraciones pendientes |
+| `npm run db:seed:catalogs` | Inserta catálogos sin datos personales |
+| `npm run db:seed:demo` | Semilla demo con doble confirmación |
+| `npm run db:create-admin` | Crea un administrador global interactivamente |
+| `npm audit --omit=dev` | Audita exclusivamente dependencias de producción |
 
-## Seguridad y límites
+## Autorización y seguridad
 
-- La autorización se aplica en el backend por perfil RRHH; el ocultamiento de botones no sustituye esos controles.
-- Quien calcula una nómina no puede aprobarla con la misma cuenta, incluso si es administrador.
-- Los pagos son idempotentes y los recibos cerrados no se editan.
-- Solo se conservan los últimos cuatro dígitos de una cuenta bancaria.
-- Los documentos se guardan en Blob privado, no en PostgreSQL ni en el navegador.
-- Las descargas usan URL temporal; no se expone el token de Blob al frontend.
-- En esta variante la subida se limita a **3 MB por documento** para permanecer por debajo del límite de solicitud de Vercel Functions. Para archivos mayores debe implementarse carga directa con tokens de cliente.
-- Las sesiones duran ocho horas. `SESSION_SECRET` debe ser aleatorio, propio y de al menos 32 caracteres.
-- No se utiliza RLS de Supabase: Neon se protege mediante las reglas del backend y las claves permanecen exclusivamente en el servidor.
+- El rol global `admin` gestiona usuarios. El perfil RRHH `administrador` gestiona operaciones, pero no puede crear ni elevar administradores globales.
+- `consulta` tiene lectura general de expedientes, nóminas, operaciones, catálogos, parámetros y bitácora; no escribe. Debe asignarse solo a personal autorizado para ese alcance.
+- `trabajador` requiere `users.employeeId` y solo consulta su expediente, documentos y recibos. Los IDs ajenos se rechazan en el servidor.
+- Desactivar una cuenta, cambiar su perfil o cambiar/restablecer su contraseña revoca sus sesiones. No existe degradación de inactivo a `consulta`.
+- JWT en cookie `httpOnly`, `sameSite=lax`, `path=/` y `secure` en Vercel Preview/Production; caducidad absoluta de ocho horas e inactividad máxima de una hora. Las sesiones se validan y revocan en Neon.
+- Login con rate limiting persistente por IP y por IP/usuario, hashes HMAC y bloqueo progresivo. Mensajes de autenticación genéricos.
+- Contraseñas con scrypt, sal aleatoria y `timingSafeEqual`; mínimo 12 caracteres con mayúsculas, minúsculas, números y símbolos.
+- Blob privado, máximo 3 MB, extensión/MIME/magic bytes y estructura OOXML para DOCX. Las descargas son adjuntos y la inserción fallida intenta limpiar el Blob.
+- CSV con BOM, CRLF, escape de comillas y neutralización de fórmulas.
+- CSP sin `unsafe-eval`, HSTS sin `includeSubDomains` ni `preload`, validación same-origin de mutaciones y errores sin stack en las respuestas.
+- Los contadores de login se eliminan tras 24 horas. La bitácora y sus hashes de IP se conservan dos años; ajusta esta política si la normativa aplicable exige otro plazo.
 
-La descripción completa del despliegue está en [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
+## Riesgos pendientes
+
+No se simula MFA ni antivirus. MFA TOTP para cuentas privilegiadas, escaneo antivirus, WAF, copias de seguridad/PITR, alertas y pruebas contra el despliegue real requieren configuración o infraestructura adicional. Revisa también los resultados de dependencias en `docs/PRUEBAS.md`.

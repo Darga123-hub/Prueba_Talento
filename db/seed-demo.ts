@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "../server/queries/connection";
 import { accessProfiles, users } from "./schema";
 import { hashPassword } from "../server/local-auth";
+import { env } from "../server/lib/env";
 
 const DEMO_PASSWORD = "DemoRRHH2026!";
 const demoUsers = [
@@ -14,6 +15,10 @@ const demoUsers = [
 ];
 
 async function seedDemoUsers() {
+  if (!env.demoMode || process.env.CONFIRM_DEMO_SEED !== "YES_DEMO_ONLY") {
+    throw new Error("Semilla demo bloqueada. Usa únicamente una base vacía de pruebas con DEMO_MODE=true y CONFIRM_DEMO_SEED=YES_DEMO_ONLY.");
+  }
+  console.warn("ADVERTENCIA: esta operación restablece cuentas demo. No la ejecutes sobre una base con información real.");
   const db = getDb();
   for (const demo of demoUsers) {
     const unionId = `demo:${demo.username}`;

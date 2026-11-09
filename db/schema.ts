@@ -28,6 +28,9 @@ export const users = pgTable("users", {
   username: varchar("username", { length: 80 }).unique(),
   passwordHash: text("passwordHash"),
   role: userRole("role").default("user").notNull(),
+  disabledAt: timestamp("disabledAt", { withTimezone: true }),
+  sessionVersion: integer("sessionVersion").default(1).notNull(),
+  employeeId: integer("employeeId"),
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
   lastSignInAt: timestamp("lastSignInAt", { withTimezone: true }).defaultNow().notNull(),
@@ -206,8 +209,28 @@ export const auditLogs = pgTable("rrhh_audit_logs", {
   entity: varchar("entity", { length: 80 }).notNull(),
   entityId: varchar("entityId", { length: 50 }),
   detail: text("detail"),
+  metadata: jsonb("metadata"),
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("rrhh_audit_created_idx").on(t.createdAt)]);
+
+export const authSessions = pgTable("rrhh_auth_sessions", {
+  idHash: varchar("idHash", { length: 64 }).primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sessionVersion: integer("sessionVersion").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+  lastSeenAt: timestamp("lastSeenAt", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
+  revokedAt: timestamp("revokedAt", { withTimezone: true }),
+}, (t) => [index("rrhh_auth_sessions_user_idx").on(t.userId), index("rrhh_auth_sessions_expiry_idx").on(t.expiresAt)]);
+
+export const loginAttempts = pgTable("rrhh_login_attempts", {
+  keyHash: varchar("keyHash", { length: 64 }).primaryKey(),
+  scope: varchar("scope", { length: 20 }).notNull(),
+  windowStartedAt: timestamp("windowStartedAt", { withTimezone: true }).defaultNow().notNull(),
+  failures: integer("failures").default(0).notNull(),
+  blockedUntil: timestamp("blockedUntil", { withTimezone: true }),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("rrhh_login_attempts_retention_idx").on(t.updatedAt)]);
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;

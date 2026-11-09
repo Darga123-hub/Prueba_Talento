@@ -7,6 +7,15 @@ import { createContext } from "./context.js";
 const app = new Hono();
 
 app.use("/api/trpc/*", bodyLimit({ maxSize: 5 * 1024 * 1024 }));
+app.use("/api/trpc/*", async (c, next) => {
+  if (c.req.method !== "POST") return next();
+  const fetchSite = c.req.header("sec-fetch-site");
+  const origin = c.req.header("origin");
+  if ((fetchSite && !["same-origin", "none"].includes(fetchSite)) || (origin && origin !== new URL(c.req.url).origin)) {
+    return c.json({ error: "Origen no permitido" }, 403);
+  }
+  return next();
+});
 app.get("/api/health", (c) => c.json({ ok: true }));
 app.use("/api/trpc/*", (c) => fetchRequestHandler({
   endpoint: "/api/trpc",
