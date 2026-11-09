@@ -1,8 +1,8 @@
 import { Pool } from "pg";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { attachDatabasePool } from "@vercel/functions";
-import * as schema from "../../db/schema";
-import { env } from "../lib/env";
+import * as schema from "../../db/schema.js";
+import { env } from "../lib/env.js";
 
 let pool: Pool | undefined;
 let database: NodePgDatabase<typeof schema> | undefined;

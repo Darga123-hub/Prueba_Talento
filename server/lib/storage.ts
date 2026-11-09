@@ -1,5 +1,5 @@
 import { get, put } from "@vercel/blob";
-import { env } from "./env";
+import { env } from "./env.js";
 
 export const storage = {
   async uploadFile({ fileContent, fileName, contentType }: { fileContent: Uint8Array; fileName: string; contentType?: string }) {

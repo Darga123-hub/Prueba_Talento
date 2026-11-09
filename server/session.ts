@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
-import { env } from "./lib/env";
+import { env } from "./lib/env.js";
 
 export const SESSION_COOKIE = "rrhh_sid";
 export const SESSION_SECONDS = 60 * 60 * 8;

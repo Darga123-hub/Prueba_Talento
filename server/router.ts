@@ -1,6 +1,6 @@
-import { authRouter } from "./auth-router";
-import { createRouter, publicQuery } from "./middleware";
-import { hrRouter } from "./hr-router";
+import { authRouter } from "./auth-router.js";
+import { createRouter, publicQuery } from "./middleware.js";
+import { hrRouter } from "./hr-router.js";
 
 export const appRouter = createRouter({
   ping: publicQuery.query(() => ({ ok: true, ts: Date.now() })),

@@ -2,11 +2,11 @@ import * as cookie from "cookie";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { users, type User } from "../db/schema";
-import { getDb } from "./queries/connection";
-import { signSessionToken, sessionCookieOptions, SESSION_COOKIE } from "./session";
-import { verifyPassword } from "./local-auth";
-import { createRouter, authedQuery, publicQuery } from "./middleware";
+import { users, type User } from "../db/schema.js";
+import { getDb } from "./queries/connection.js";
+import { signSessionToken, sessionCookieOptions, SESSION_COOKIE } from "./session.js";
+import { verifyPassword } from "./local-auth.js";
+import { createRouter, authedQuery, publicQuery } from "./middleware.js";
 
 function publicUser(user: User) {
   const { passwordHash: _passwordHash, ...safeUser } = user;

@@ -1,15 +1,15 @@
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { createRouter, authedQuery } from "./middleware";
-import { getDb } from "./queries/connection";
-import { storage } from "./lib/storage";
+import { createRouter, authedQuery } from "./middleware.js";
+import { getDb } from "./queries/connection.js";
+import { storage } from "./lib/storage.js";
 import {
   accessProfiles, employees, catalogItems, movements, incidents, concepts,
   payrolls, payrollItems, payments, processes, legalParameters, documents,
   auditLogs, users,
-} from "../db/schema";
-import type { TrpcContext } from "./context";
+} from "../db/schema.js";
+import type { TrpcContext } from "./context.js";
 
 type Ctx = TrpcContext & { user: NonNullable<TrpcContext["user"]> };
 type Role = "administrador" | "talento" | "nomina" | "aprobador" | "tesoreria" | "consulta" | "trabajador";

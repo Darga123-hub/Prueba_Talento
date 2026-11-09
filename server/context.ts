@@ -1,9 +1,9 @@
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { parse } from "cookie";
 import { eq } from "drizzle-orm";
-import { users, type User } from "../db/schema";
-import { getDb } from "./queries/connection";
-import { readSessionToken, SESSION_COOKIE } from "./session";
+import { users, type User } from "../db/schema.js";
+import { getDb } from "./queries/connection.js";
+import { readSessionToken, SESSION_COOKIE } from "./session.js";
 
 export async function createContext({ req, resHeaders }: FetchCreateContextFnOptions) {
   let user: User | null = null;
