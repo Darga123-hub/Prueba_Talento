@@ -2,7 +2,7 @@ import * as cookie from "cookie";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { users, type User } from "@db/schema";
+import { users, type User } from "../db/schema";
 import { getDb } from "./queries/connection";
 import { signSessionToken, sessionCookieOptions, SESSION_COOKIE } from "./session";
 import { verifyPassword } from "./local-auth";
