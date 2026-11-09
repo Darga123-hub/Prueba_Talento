@@ -1,7 +1,7 @@
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { parse } from "cookie";
 import { eq } from "drizzle-orm";
-import { users, type User } from "@db/schema";
+import { users, type User } from "../db/schema";
 import { getDb } from "./queries/connection";
 import { readSessionToken, SESSION_COOKIE } from "./session";
 
