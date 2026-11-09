@@ -8,7 +8,7 @@ import {
   accessProfiles, employees, catalogItems, movements, incidents, concepts,
   payrolls, payrollItems, payments, processes, legalParameters, documents,
   auditLogs, users,
-} from "@db/schema";
+} from "../db/schema";
 import type { TrpcContext } from "./context";
 
 type Ctx = TrpcContext & { user: NonNullable<TrpcContext["user"]> };
